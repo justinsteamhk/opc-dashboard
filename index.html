@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iSWAT OPC Financial Dashboard — Justin Tsui</title>
+<!--
+  ═══════════════════════════════════════════════════════════════
+  WORDPRESS EMBED INSTRUCTIONS
+  ═══════════════════════════════════════════════════════════════
+
+  1. UPLOAD this file to your web hosting (e.g. GitHub Pages, your
+     own server, or WordPress media library if it accepts HTML).
+
+  2. GET the public URL. Example:
+     https://justinsteamhk.github.io/jthkhermes/iSWAT_OPC_Financial_Dashboard_Embed.html
+
+  3. PASTE this iframe code into any WordPress post/page (Custom HTML block):
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │ <!-- iSWAT OPC Financial Dashboard Embed -->                │
+  │ <iframe src="YOUR_URL_HERE"                                 │
+  │         width="100%"                                        │
+  │         height="1200"                                       │
+  │         style="border:none; border-radius:12px;             │
+  │                background:#0f172a;"                         │
+  │         scrolling="yes"                                     │
+  │         loading="lazy"                                      │
+  │         title="iSWAT OPC Financial Dashboard">              │
+  │ </iframe>                                                   │
+  │ <p style="text-align:center; font-size:0.8rem;              │
+  │           color:#64748b;">                                 │
+  │   <a href="YOUR_URL_HERE" target="_blank">Open in full screen ↗</a>│
+  │ </p>                                                        │
+  └─────────────────────────────────────────────────────────────┘
+
+  4. ADJUST HEIGHT: Start with 1200px, then tweak based on how
+     much content you want visible. For a compact embed showing
+     only KPIs + chart, use 650px. For full view, use 2400px.
+
+  5. OPTIONAL - Auto-resize iframe height (advanced):
+     Add this script to your WordPress footer for dynamic height:
+     <script src="https://cdn.jsdelivr.net/npm/iframe-resizer@4.3.9/js/iframeResizer.min.js"></script>
+     <script>iFrameResize({ log: false }, '#opc-dashboard');</script>
+     And add id="opc-dashboard" to your iframe tag.
+
+  ═══════════════════════════════════════════════════════════════
+-->
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#3b82f6; --accent2:#10b981; --accent3:#f59e0b; --accent4:#ef4444; --border:#334155; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.6; padding:20px; }
+  h1 { font-size:1.8rem; margin-bottom:4px; }
+  h2 { font-size:1.3rem; margin:24px 0 12px; color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:6px; }
+  h3 { font-size:1rem; color:var(--muted); margin:16px 0 8px; }
+  .subtitle { color:var(--muted); font-size:0.95rem; margin-bottom:20px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .kpi { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center; }
+  .kpi .value { font-size:1.6rem; font-weight:700; }
+  .kpi .label { font-size:0.8rem; color:var(--muted); margin-top:4px; }
+  .kpi.positive .value { color:var(--accent2); }
+  .kpi.negative .value { color:var(--accent4); }
+  .kpi.warning .value { color:var(--accent3); }
+  .control-group { margin-bottom:14px; }
+  .control-group label { display:block; font-size:0.85rem; color:var(--muted); margin-bottom:4px; }
+  .control-group input[type="range"] { width:100%; }
+  .control-group .val { float:right; font-weight:600; color:var(--accent); }
+  .control-group input[type="number"] { width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:#0f172a; color:var(--text); font-size:0.9rem; }
+  table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:8px; }
+  th, td { padding:8px; text-align:left; border-bottom:1px solid var(--border); }
+  th { color:var(--muted); font-weight:500; }
+  td.num { text-align:right; font-family:'SF Mono',monospace; }
+  .positive { color:var(--accent2); }
+  .negative { color:var(--accent4); }
+  .scenario-tabs { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+  .scenario-tab { padding:8px 16px; border-radius:6px; cursor:pointer; border:1px solid var(--border); background:var(--card); color:var(--muted); font-size:0.85rem; position:relative; }
+  .scenario-tab.active { background:var(--accent); color:white; border-color:var(--accent); }
+  .scenario-tab .del { display:none; margin-left:8px; font-size:0.75rem; opacity:0.7; }
+  .scenario-tab:hover .del { display:inline; }
+  .scenario-tab .del:hover { color:var(--accent4); opacity:1; }
+  .add-scenario-btn { padding:8px 14px; border-radius:6px; cursor:pointer; border:1px dashed var(--accent); background:transparent; color:var(--accent); font-size:0.85rem; }
+  .add-scenario-btn:hover { background:rgba(59,130,246,0.1); }
+  .risk-item { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid var(--border); }
+  .risk-high { color:var(--accent4); }
+  .risk-med { color:var(--accent3); }
+  .risk-low { color:var(--accent2); }
+  .toggle-btn { background:var(--accent); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-size:0.9rem; }
+  .toggle-btn:hover { opacity:0.9; }
+  .hidden { display:none; }
+  canvas { width:100% !important; height:280px !important; }
+  .insight-box { background:rgba(59,130,246,0.08); border-left:3px solid var(--accent); padding:12px; border-radius:0 8px 8px 0; margin:12px 0; font-size:0.9rem; }
+  .insight-box.warning { background:rgba(245,158,11,0.08); border-left-color:var(--accent3); }
+  .insight-box.danger { background:rgba(239,68,68,0.08); border-left-color:var(--accent4); }
+
+  /* Modal */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:10000; display:none; align-items:center; justify-content:center; }
+  .modal-overlay.show { display:flex; }
+  .modal { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; width:90%; max-width:500px; }
+  .modal h3 { margin-top:0; color:var(--text); font-size:1.1rem; }
+  .modal .form-group { margin-bottom:16px; }
+  .modal .form-group label { display:block; font-size:0.85rem; color:var(--muted); margin-bottom:6px; }
+  .modal .form-group input, .modal .form-group textarea { width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text); font-size:0.9rem; }
+  .modal .form-group textarea { min-height:80px; resize:vertical; }
+  .modal .btn-row { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+  .modal .btn { padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:0.9rem; }
+  .modal .btn-primary { background:var(--accent); color:white; }
+  .modal .btn-secondary { background:var(--border); color:var(--text); }
+  .modal .btn:hover { opacity:0.9; }
+  .scenario-desc { font-size:0.75rem; color:var(--muted); margin-top:2px; font-style:italic; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .scenario-tab.active .scenario-desc { color:rgba(255,255,255,0.7); }
+
+  /* Scenario info panel */
+  .scenario-info { background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .scenario-info-text { flex:1; }
+  .scenario-info-name { font-weight:600; color:var(--accent); font-size:0.95rem; }
+  .scenario-info-remark { color:var(--muted); font-size:0.85rem; margin-top:4px; line-height:1.4; }
+  .scenario-info-actions { display:flex; gap:8px; flex-shrink:0; }
+  .icon-btn { background:var(--card); border:1px solid var(--border); color:var(--text); padding:8px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:6px; }
+  .icon-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Save indicator */
+  .save-indicator { position:fixed; top:20px; right:20px; padding:8px 14px; border-radius:8px; background:var(--accent2); color:white; font-size:0.8rem; opacity:0; transition:opacity 0.3s; z-index:9999; pointer-events:none; }
+  .save-indicator.show { opacity:1; }
+  .sync-hint { color:var(--muted); font-size:0.8rem; margin-bottom:12px; }
+
+  /* ═══════ EMBED MODE OVERRIDES ═══════ */
+  body.embed-mode { padding:12px; }
+  body.embed-mode h1 { font-size:1.4rem; }
+  body.embed-mode h2 { font-size:1.1rem; margin:16px 0 8px; }
+  body.embed-mode .subtitle { font-size:0.85rem; margin-bottom:12px; }
+  body.embed-mode .kpi-row { gap:8px; margin-bottom:12px; }
+  body.embed-mode .kpi { padding:10px; }
+  body.embed-mode .kpi .value { font-size:1.3rem; }
+  body.embed-mode .grid { gap:12px; }
+  body.embed-mode .card { padding:12px; }
+  body.embed-mode canvas { height:220px !important; }
+  body.embed-mode .scenario-info { padding:10px 12px; margin-bottom:12px; }
+  body.embed-mode table { font-size:0.78rem; }
+  body.embed-mode th, body.embed-mode td { padding:6px; }
+
+  /* Very narrow screens (mobile / narrow sidebars) */
+  @media (max-width:480px) {
+    body { padding:10px; }
+    h1 { font-size:1.3rem; }
+    .kpi .value { font-size:1.2rem; }
+    .grid { grid-template-columns:1fr; }
+    .scenario-tabs { gap:6px; }
+    .scenario-tab { padding:6px 10px; font-size:0.8rem; }
+    canvas { height:200px !important; }
+    table { font-size:0.75rem; }
+    th, td { padding:5px; }
+    .scenario-info { flex-direction:column; gap:8px; }
+    .scenario-info-actions { align-self:flex-end; }
+  }
+
+  /* Hide scrollbars inside iframe for cleaner look */
+  body.embed-mode::-webkit-scrollbar { width:6px; }
+  body.embed-mode::-webkit-scrollbar-track { background:var(--bg); }
+  body.embed-mode::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- Embed mode detection -->
+<script>
+  (function(){
+    if(window.self !== window.top) {
+      document.body.classList.add('embed-mode');
+    }
+  })();
+</script>
+
+<div class="save-indicator" id="saveInd">💾 Auto-saved</div>
+
+<h1>🎯 iSWAT OPC Financial Dashboard</h1>
+<p class="subtitle">Justin Tsui — One-Person Company Financial Planner | Launch: Sept 2026 | Target: HKD 100K/month</p>
+<p class="sync-hint">🔗 The URL auto-updates as you adjust numbers — copy the address bar to share this exact view. Custom scenarios are saved inside the link.</p>
+
+<div class="kpi-row">
+  <div class="kpi" id="kpi-target"><div class="value">HKD 100K</div><div class="label">Monthly Target</div></div>
+  <div class="kpi" id="kpi-proj"><div class="value" style="color:var(--accent3)">—</div><div class="label">Month-24 Projection</div></div>
+  <div class="kpi" id="kpi-breakeven"><div class="value" style="color:var(--accent)">—</div><div class="label">Break-Even Month</div></div>
+  <div class="kpi" id="kpi-runway"><div class="value" style="color:var(--accent2)">—</div><div class="label">Cash Runway (mo)</div></div>
+  <div class="kpi" id="kpi-total"><div class="value">—</div><div class="label">Total Y2 Revenue</div></div>
+</div>
+
+<div class="scenario-tabs" id="scenarioTabs">
+  <div class="scenario-tab active" data-scenario="conservative" onclick="setScenario('conservative')">Conservative</div>
+  <div class="scenario-tab" data-scenario="base" onclick="setScenario('base')">Base Case</div>
+  <div class="scenario-tab" data-scenario="optimistic" onclick="setScenario('optimistic')">Optimistic</div>
+  <button class="add-scenario-btn" onclick="openScenarioModal()">+ New Scenario</button>
+</div>
+
+<!-- Scenario info panel -->
+<div class="scenario-info" id="scenarioInfo" style="display:none;">
+  <div class="scenario-info-text">
+    <div class="scenario-info-name" id="scenarioInfoName">—</div>
+    <div class="scenario-info-remark" id="scenarioInfoRemark">—</div>
+  </div>
+  <div class="scenario-info-actions">
+    <button class="icon-btn" onclick="copyShareLink()" title="Copy shareable link with current numbers">🔗 Copy Link</button>
+  </div>
+</div>
+
+<div class="grid">
+
+<!-- REVENUE STREAMS -->
+<div class="card">
+  <h2>💰 Revenue Streams</h2>
+
+  <h3>1. PolyU Teaching (Fixed)</h3>
+  <div class="control-group"><label>Hours per year <span class="val" id="v-polyu-hrs">39</span></label><input type="range" id="polyu-hrs" min="0" max="120" value="39" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Hourly rate (HKD) <span class="val" id="v-polyu-rate">900</span></label><input type="range" id="polyu-rate" min="500" max="2000" step="50" value="900" oninput="onInputChange(this)"></div>
+
+  <h3>2. iSWAT Book</h3>
+  <div class="control-group"><label>Launch units (Month 1) <span class="val" id="v-book-launch">500</span></label><input type="range" id="book-launch" min="0" max="5000" step="100" value="500" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Monthly sales after launch <span class="val" id="v-book-monthly">50</span></label><input type="range" id="book-monthly" min="0" max="500" step="10" value="50" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Price per book (HKD) <span class="val" id="v-book-price">280</span></label><input type="range" id="book-price" min="150" max="500" step="10" value="280" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Royalty margin <span class="val" id="v-book-margin">60%</span></label><input type="range" id="book-margin" min="10" max="90" value="60" oninput="onInputChange(this)"></div>
+
+  <h3>3. LinkedIn / YouTube Content</h3>
+  <div class="control-group"><label>Current LinkedIn followers <span class="val" id="v-li-followers">1500</span></label><input type="range" id="li-followers" min="0" max="20000" step="100" value="1500" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Monthly follower growth <span class="val" id="v-li-growth">10%</span></label><input type="range" id="li-growth" min="0" max="50" value="10" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Monetization starts at <span class="val" id="v-li-monetize">5000</span></label><input type="range" id="li-monetize" min="1000" max="50000" step="1000" value="5000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Monthly revenue once monetized <span class="val" id="v-li-revenue">5000</span></label><input type="range" id="li-revenue" min="0" max="50000" step="500" value="5000" oninput="onInputChange(this)"></div>
+
+  <h3>4. SoulGood.App</h3>
+  <div class="control-group"><label>Free users at launch <span class="val" id="v-sg-users">200</span></label><input type="range" id="sg-users" min="0" max="5000" step="100" value="200" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Monthly user growth <span class="val" id="v-sg-growth">15%</span></label><input type="range" id="sg-growth" min="0" max="50" value="15" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Freemium conversion rate <span class="val" id="v-sg-convert">3%</span></label><input type="range" id="sg-convert" min="0.5" max="15" step="0.5" value="3" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Paid tier (HKD/month) <span class="val" id="v-sg-price">299</span></label><input type="range" id="sg-price" min="99" max="999" step="50" value="299" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Coaching upsell (% of paid) <span class="val" id="v-sg-coach">20%</span></label><input type="range" id="sg-coach" min="0" max="50" value="20" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Coaching package (HKD) <span class="val" id="v-sg-coachprice">5000</span></label><input type="range" id="sg-coachprice" min="1000" max="20000" step="500" value="5000" oninput="onInputChange(this)"></div>
+
+  <h3>5. iSWAT AI Agent Platform</h3>
+  <div class="control-group"><label>Launch month <span class="val" id="v-ai-launch">6</span></label><input type="range" id="ai-launch" min="1" max="24" value="6" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Monthly subscription (HKD) <span class="val" id="v-ai-price">499</span></label><input type="range" id="ai-price" min="199" max="1999" step="50" value="499" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Initial subscribers <span class="val" id="v-ai-subs">50</span></label><input type="range" id="ai-subs" min="0" max="500" step="10" value="50" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Monthly churn <span class="val" id="v-ai-churn">5%</span></label><input type="range" id="ai-churn" min="1" max="20" value="5" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Monthly new subscribers <span class="val" id="v-ai-new">30</span></label><input type="range" id="ai-new" min="0" max="200" step="5" value="30" oninput="onInputChange(this)"></div>
+
+  <h3>6. iSWAT Academy</h3>
+  <div class="control-group"><label>Boot camp price (HKD) <span class="val" id="v-acad-boot">15000</span></label><input type="range" id="acad-boot" min="5000" max="50000" step="1000" value="15000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Boot camps per quarter <span class="val" id="v-acad-bootnum">1</span></label><input type="range" id="acad-bootnum" min="0" max="4" step="1" value="1" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Students per boot camp <span class="val" id="v-acad-students">10</span></label><input type="range" id="acad-students" min="1" max="30" step="1" value="10" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Custom coaching (HKD/mo) <span class="val" id="v-acad-custom">20000</span></label><input type="range" id="acad-custom" min="0" max="100000" step="2000" value="20000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Custom clients <span class="val" id="v-acad-clients">1</span></label><input type="range" id="acad-clients" min="0" max="5" step="1" value="1" oninput="onInputChange(this)"></div>
+
+  <h3>7. artefactx.net Consulting</h3>
+  <div class="control-group"><label>Projects per quarter <span class="val" id="v-art-proj">1</span></label><input type="range" id="art-proj" min="0" max="4" step="1" value="1" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Avg project value (HKD) <span class="val" id="v-art-value">80000</span></label><input type="range" id="art-value" min="10000" max="300000" step="10000" value="80000" oninput="onInputChange(this)"></div>
+
+</div>
+
+<!-- COSTS -->
+<div class="card">
+  <h2>💸 Monthly Operating Costs</h2>
+  <div class="control-group"><label>Personal living expenses <span class="val" id="v-cost-living">35000</span></label><input type="range" id="cost-living" min="15000" max="80000" step="1000" value="35000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Office / co-working <span class="val" id="v-cost-office">3000</span></label><input type="range" id="cost-office" min="0" max="15000" step="500" value="3000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Software & tools <span class="val" id="v-cost-software">2000</span></label><input type="range" id="cost-software" min="500" max="10000" step="500" value="2000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Marketing & ads <span class="val" id="v-cost-marketing">5000</span></label><input type="range" id="cost-marketing" min="0" max="30000" step="1000" value="5000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Platform hosting & infra <span class="val" id="v-cost-hosting">3000</span></label><input type="range" id="cost-hosting" min="500" max="15000" step="500" value="3000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Freelancers / contractors <span class="val" id="v-cost-contractor">5000</span></label><input type="range" id="cost-contractor" min="0" max="30000" step="1000" value="5000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Other fixed costs <span class="val" id="v-cost-other">2000</span></label><input type="range" id="cost-other" min="0" max="10000" step="500" value="2000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>One-time setup costs (book, MVP) <span class="val" id="v-cost-onetime">100000</span></label><input type="range" id="cost-onetime" min="0" max="500000" step="10000" value="100000" oninput="onInputChange(this)"></div>
+  <div class="control-group"><label>Starting cash reserve <span class="val" id="v-cash-start">300000</span></label><input type="range" id="cash-start" min="0" max="1000000" step="50000" value="300000" oninput="onInputChange(this)"></div>
+</div>
+
+</div>
+
+<h2>📊 Monthly Projection (24 Months)</h2>
+<div class="card"><canvas id="revenueChart"></canvas></div>
+
+<h2>📈 Revenue Breakdown by Stream</h2>
+<div class="card">
+  <table id="breakdown-table">
+    <thead><tr><th>Month</th><th>Teaching</th><th>Book</th><th>Content</th><th>SoulGood</th><th>AI Agent</th><th>Academy</th><th>Consulting</th><th>Total Revenue</th><th>Total Cost</th><th>Net</th><th>Cumulative</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<h2>⚠️ Risk Analysis</h2>
+<div class="card">
+  <div id="risk-analysis"></div>
+</div>
+
+<h2>💡 Strategic Insights</h2>
+<div class="card">
+  <div id="insights"></div>
+</div>
+
+<!-- Custom Scenario Modal -->
+<div class="modal-overlay" id="scenarioModal">
+  <div class="modal">
+    <h3>💾 Save Custom Scenario</h3>
+    <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Save the current slider values as a named scenario. It will be stored in your shareable link.</p>
+    <div class="form-group">
+      <label>Scenario Name</label>
+      <input type="text" id="scenarioName" placeholder='e.g. "Aggressive AI First"' maxlength="30">
+    </div>
+    <div class="form-group">
+      <label>Remark / Description</label>
+      <textarea id="scenarioRemark" placeholder="Describe your assumptions and strategy for this scenario..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeScenarioModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomScenario()">Save Scenario</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const INPUT_IDS = ['polyu-hrs','polyu-rate','book-launch','book-monthly','book-price','book-margin',
+  'li-followers','li-growth','li-monetize','li-revenue',
+  'sg-users','sg-growth','sg-convert','sg-price','sg-coach','sg-coachprice',
+  'ai-launch','ai-price','ai-subs','ai-churn','ai-new',
+  'acad-boot','acad-bootnum','acad-students','acad-custom','acad-clients',
+  'art-proj','art-value','cost-living','cost-office','cost-software','cost-marketing',
+  'cost-hosting','cost-contractor','cost-other','cost-onetime','cash-start'];
+
+const BUILTIN_SCENARIOS = {
+  conservative: {
+    name: 'Conservative',
+    remark: 'Safe assumptions, slower growth, lower risk. Best for stress-testing viability.',
+    values: {'polyu-hrs':39,'polyu-rate':900,'book-launch':200,'book-monthly':20,'book-price':250,'book-margin':50,'li-followers':1500,'li-growth':5,'li-monetize':10000,'li-revenue':2000,'sg-users':100,'sg-growth':8,'sg-convert':1.5,'sg-price':199,'sg-coach':10,'sg-coachprice':3000,'ai-launch':12,'ai-price':299,'ai-subs':20,'ai-churn':8,'ai-new':15,'acad-boot':10000,'acad-bootnum':0,'acad-students':5,'acad-custom':10000,'acad-clients':0,'art-proj':0,'art-value':50000,'cost-living':35000,'cost-office':3000,'cost-software':2000,'cost-marketing':3000,'cost-hosting':2000,'cost-contractor':3000,'cost-other':2000,'cost-onetime':80000,'cash-start':200000}
+  },
+  base: {
+    name: 'Base Case',
+    remark: 'Realistic mid-point assumptions. Most likely path to HKD 100K.',
+    values: {'polyu-hrs':39,'polyu-rate':900,'book-launch':500,'book-monthly':50,'book-price':280,'book-margin':60,'li-followers':1500,'li-growth':10,'li-monetize':5000,'li-revenue':5000,'sg-users':200,'sg-growth':15,'sg-convert':3,'sg-price':299,'sg-coach':20,'sg-coachprice':5000,'ai-launch':6,'ai-price':499,'ai-subs':50,'ai-churn':5,'ai-new':30,'acad-boot':15000,'acad-bootnum':1,'acad-students':10,'acad-custom':20000,'acad-clients':1,'art-proj':1,'art-value':80000,'cost-living':35000,'cost-office':3000,'cost-software':2000,'cost-marketing':5000,'cost-hosting':3000,'cost-contractor':5000,'cost-other':2000,'cost-onetime':100000,'cash-start':300000}
+  },
+  optimistic: {
+    name: 'Optimistic',
+    remark: 'Best-case assumptions with strong execution. Higher risk but faster growth.',
+    values: {'polyu-hrs':78,'polyu-rate':1200,'book-launch':2000,'book-monthly':150,'book-price':350,'book-margin':70,'li-followers':1500,'li-growth':20,'li-monetize':3000,'li-revenue':15000,'sg-users':500,'sg-growth':25,'sg-convert':5,'sg-price':499,'sg-coach':30,'sg-coachprice':8000,'ai-launch':3,'ai-price':799,'ai-subs':150,'ai-churn':3,'ai-new':60,'acad-boot':25000,'acad-bootnum':2,'acad-students':20,'acad-custom':50000,'acad-clients':3,'art-proj':2,'art-value':150000,'cost-living':35000,'cost-office':5000,'cost-software':4000,'cost-marketing':15000,'cost-hosting':6000,'cost-contractor':15000,'cost-other':3000,'cost-onetime':200000,'cash-start':500000}
+  }
+};
+
+let customScenarios = {};
+let currentScenario = 'base';
+let saveTimeout = null;
+let urlUpdateTimeout = null;
+
+// ===================== URL STATE SYNC =====================
+
+function encodeStateToHash() {
+  const values = INPUT_IDS.map(id => parseFloat(document.getElementById(id).value));
+  const payload = {
+    v: values,
+    s: currentScenario,
+    c: Object.keys(customScenarios).map(k => ({
+      k: k,
+      n: customScenarios[k].name,
+      r: customScenarios[k].remark || '',
+      v: INPUT_IDS.map(id => customScenarios[k].values[id])
+    }))
+  };
+  // Compress: remove unnecessary decimal places, use short keys
+  return '#' + btoa(encodeURIComponent(JSON.stringify(payload)));
+}
+
+function decodeStateFromHash() {
+  try {
+    const hash = window.location.hash;
+    if(!hash || hash.length < 2) return null;
+    const payload = JSON.parse(decodeURIComponent(atob(hash.slice(1))));
+    return payload;
+  } catch(e) { return null; }
+}
+
+function applyHashState() {
+  const payload = decodeStateFromHash();
+  if(!payload) return false;
+
+  // Apply values
+  if(payload.v && Array.isArray(payload.v)) {
+    INPUT_IDS.forEach((id, i) => {
+      if(payload.v[i] !== undefined) {
+        const el = document.getElementById(id);
+        if(el) el.value = payload.v[i];
+      }
+    });
+  }
+
+  // Restore custom scenarios
+  if(payload.c && Array.isArray(payload.c)) {
+    customScenarios = {};
+    payload.c.forEach(cs => {
+      const values = {};
+      INPUT_IDS.forEach((id, i) => { if(cs.v && cs.v[i] !== undefined) values[id] = cs.v[i]; });
+      customScenarios[cs.k || ('custom_' + Date.now())] = { name: cs.n || 'Custom', remark: cs.r || '', values };
+    });
+    // Persist restored custom scenarios to localStorage as backup
+    localStorage.setItem('opc_custom_scenarios', JSON.stringify(customScenarios));
+  }
+
+  // Set scenario
+  if(payload.s) {
+    currentScenario = payload.s;
+  }
+
+  return true;
+}
+
+function updateUrlHash() {
+  clearTimeout(urlUpdateTimeout);
+  urlUpdateTimeout = setTimeout(() => {
+    const hash = encodeStateToHash();
+    history.replaceState(null, '', window.location.pathname + window.location.search + hash);
+  }, 300);
+}
+
+function copyShareLink() {
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector('.icon-btn');
+    const old = btn.innerHTML;
+    btn.innerHTML = '✅ Copied!';
+    setTimeout(() => btn.innerHTML = old, 1500);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.querySelector('.icon-btn');
+    const old = btn.innerHTML;
+    btn.innerHTML = '✅ Copied!';
+    setTimeout(() => btn.innerHTML = old, 1500);
+  });
+}
+
+// ===================== LOCAL STORAGE (fallback) =====================
+
+function loadCustomScenarios() {
+  try {
+    const stored = localStorage.getItem('opc_custom_scenarios');
+    if(stored) customScenarios = JSON.parse(stored);
+  } catch(e) { customScenarios = {}; }
+}
+
+function persistState() {
+  const state = {};
+  INPUT_IDS.forEach(id => { state[id] = document.getElementById(id).value; });
+  state._scenario = currentScenario;
+  state._timestamp = Date.now();
+  localStorage.setItem('opc_dashboard_state', JSON.stringify(state));
+
+  // Also update URL for shareability
+  updateUrlHash();
+
+  // Show indicator
+  const ind = document.getElementById('saveInd');
+  ind.classList.add('show');
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => ind.classList.remove('show'), 1200);
+}
+
+function restoreState() {
+  try {
+    const stored = localStorage.getItem('opc_dashboard_state');
+    if(!stored) return false;
+    const state = JSON.parse(stored);
+    INPUT_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if(el && state[id] !== undefined) el.value = state[id];
+    });
+    if(state._scenario) currentScenario = state._scenario;
+    return true;
+  } catch(e) { return false; }
+}
+
+// ===================== UI UPDATES =====================
+
+function onInputChange(el) {
+  // Update the display value immediately
+  const displayEl = document.getElementById('v-' + el.id);
+  if(displayEl) {
+    let v = parseFloat(el.value);
+    if(el.id.includes('margin')||el.id.includes('growth')||el.id.includes('convert')||el.id.includes('churn')||(el.id.includes('coach')&&el.id!=='sg-coachprice'&&el.id!=='acad-custom')) displayEl.textContent = v+'%';
+    else if(el.id.includes('price')||el.id.includes('value')||el.id.includes('cost')||el.id.includes('rate')||el.id.includes('revenue')||el.id.includes('start')) displayEl.textContent = 'HKD '+v.toLocaleString();
+    else displayEl.textContent = v.toLocaleString();
+  }
+
+  // If we're on a built-in scenario, switch to "custom" visual state
+  if(BUILTIN_SCENARIOS[currentScenario]) {
+    currentScenario = 'custom';
+    renderScenarioTabs();
+  }
+
+  // Full recalculation
+  update();
+
+  // Debounced persist + URL sync
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(persistState, 500);
+}
+
+function renderScenarioTabs() {
+  const container = document.getElementById('scenarioTabs');
+  let html = '';
+
+  // Built-in
+  Object.keys(BUILTIN_SCENARIOS).forEach(key => {
+    const s = BUILTIN_SCENARIOS[key];
+    const active = currentScenario === key ? 'active' : '';
+    html += `<div class="scenario-tab ${active}" data-scenario="${key}" onclick="setScenario('${key}')">${s.name}</div>`;
+  });
+
+  // Custom scenarios
+  Object.keys(customScenarios).forEach(key => {
+    const s = customScenarios[key];
+    const active = currentScenario === key ? 'active' : '';
+    html += `<div class="scenario-tab ${active}" data-scenario="${key}" onclick="setScenario('${key}')">${s.name}<span class="del" onclick="event.stopPropagation(); deleteScenario('${key}')">✕</span></div>`;
+  });
+
+  html += `<button class="add-scenario-btn" onclick="openScenarioModal()">+ New Scenario</button>`;
+  container.innerHTML = html;
+
+  // Update scenario info panel
+  updateScenarioInfo();
+}
+
+function updateScenarioInfo() {
+  const panel = document.getElementById('scenarioInfo');
+  const nameEl = document.getElementById('scenarioInfoName');
+  const remarkEl = document.getElementById('scenarioInfoRemark');
+
+  let name = 'Custom';
+  let remark = 'Current slider values. Adjust any number and the URL updates automatically for sharing.';
+
+  if(BUILTIN_SCENARIOS[currentScenario]) {
+    name = BUILTIN_SCENARIOS[currentScenario].name;
+    remark = BUILTIN_SCENARIOS[currentScenario].remark;
+  } else if(customScenarios[currentScenario]) {
+    name = customScenarios[currentScenario].name;
+    remark = customScenarios[currentScenario].remark || 'No description provided.';
+  }
+
+  nameEl.textContent = '📌 ' + name;
+  remarkEl.textContent = remark;
+  panel.style.display = 'flex';
+}
+
+function setScenario(name) {
+  currentScenario = name;
+
+  // Update tab visuals
+  renderScenarioTabs();
+
+  // Apply values
+  let values;
+  if(BUILTIN_SCENARIOS[name]) {
+    values = BUILTIN_SCENARIOS[name].values;
+  } else if(customScenarios[name]) {
+    values = customScenarios[name].values;
+  } else {
+    // "custom" with no preset — just keep current values
+    update();
+    persistState();
+    return;
+  }
+
+  for(let k in values) {
+    const el = document.getElementById(k);
+    if(el) el.value = values[k];
+  }
+
+  update();
+  persistState();
+}
+
+function openScenarioModal() {
+  document.getElementById('scenarioName').value = '';
+  document.getElementById('scenarioRemark').value = '';
+  document.getElementById('scenarioModal').classList.add('show');
+  document.getElementById('scenarioName').focus();
+}
+
+function closeScenarioModal() {
+  document.getElementById('scenarioModal').classList.remove('show');
+}
+
+function saveCustomScenario() {
+  const name = document.getElementById('scenarioName').value.trim();
+  const remark = document.getElementById('scenarioRemark').value.trim();
+
+  if(!name) {
+    alert('Please enter a scenario name');
+    return;
+  }
+
+  // Gather current values
+  const values = {};
+  INPUT_IDS.forEach(id => { values[id] = parseFloat(document.getElementById(id).value); });
+
+  const key = 'custom_' + Date.now();
+  customScenarios[key] = { name, remark, values };
+
+  // Persist to localStorage
+  localStorage.setItem('opc_custom_scenarios', JSON.stringify(customScenarios));
+
+  currentScenario = key;
+  renderScenarioTabs();
+  closeScenarioModal();
+  persistState();
+}
+
+function deleteScenario(key) {
+  if(!confirm('Delete scenario "' + customScenarios[key].name + '"?')) return;
+  delete customScenarios[key];
+  localStorage.setItem('opc_custom_scenarios', JSON.stringify(customScenarios));
+  if(currentScenario === key) {
+    currentScenario = 'base';
+    setScenario('base');
+  } else {
+    renderScenarioTabs();
+    updateUrlHash();
+  }
+}
+
+function getVal(id) { return parseFloat(document.getElementById(id).value); }
+
+// ===================== PROJECTION ENGINE =====================
+
+function update() {
+  // Update all value displays
+  INPUT_IDS.forEach(id=>{
+    const el = document.getElementById('v-'+id);
+    if(el) {
+      let v = getVal(id);
+      if(id.includes('margin')||id.includes('growth')||id.includes('convert')||id.includes('churn')||(id.includes('coach')&&id!=='sg-coachprice'&&id!=='acad-custom')) el.textContent = v+'%';
+      else if(id.includes('price')||id.includes('value')||id.includes('cost')||id.includes('rate')||id.includes('revenue')||id.includes('start')) el.textContent = 'HKD '+v.toLocaleString();
+      else el.textContent = v.toLocaleString();
+    }
+  });
+
+  const months = 24;
+  const data = { labels:[], teaching:[], book:[], content:[], soulgood:[], ai:[], academy:[], consulting:[], revenue:[], cost:[], net:[], cumulative:[] };
+  let cash = getVal('cash-start') - getVal('cost-onetime');
+  let breakeven = null;
+
+  for(let m=1; m<=months; m++) {
+    data.labels.push('M'+m);
+
+    // 1. PolyU Teaching (Q1 only, assume months 1-3)
+    let teaching = (m>=1 && m<=3) ? getVal('polyu-hrs')*getVal('polyu-rate') : 0;
+    data.teaching.push(teaching);
+
+    // 2. Book
+    let book = 0;
+    if(m===1) book = getVal('book-launch')*getVal('book-price')*(getVal('book-margin')/100);
+    else book = getVal('book-monthly')*getVal('book-price')*(getVal('book-margin')/100);
+    data.book.push(book);
+
+    // 3. Content (LinkedIn/YouTube)
+    let content = 0;
+    let followers = getVal('li-followers')*Math.pow(1+getVal('li-growth')/100, m);
+    if(followers >= getVal('li-monetize')) {
+      let monthsSince = m - Math.ceil(Math.log(getVal('li-monetize')/getVal('li-followers'))/Math.log(1+getVal('li-growth')/100));
+      if(monthsSince > 0) content = getVal('li-revenue')*Math.min(monthsSince, m);
+    }
+    data.content.push(content);
+
+    // 4. SoulGood
+    let sgUsers = getVal('sg-users')*Math.pow(1+getVal('sg-growth')/100, m);
+    let sgPaid = sgUsers*(getVal('sg-convert')/100);
+    let sgMrr = sgPaid*getVal('sg-price');
+    let sgCoach = sgPaid*(getVal('sg-coach')/100)*getVal('sg-coachprice')/3; // quarterly
+    let soulgood = sgMrr + sgCoach;
+    data.soulgood.push(soulgood);
+
+    // 5. AI Agent Platform
+    let ai = 0;
+    if(m >= getVal('ai-launch')) {
+      let subs = getVal('ai-subs');
+      for(let i=getVal('ai-launch'); i<=m; i++) {
+        subs = subs*(1-getVal('ai-churn')/100) + getVal('ai-new');
+      }
+      ai = subs*getVal('ai-price');
+    }
+    data.ai.push(ai);
+
+    // 6. Academy
+    let bootRev = (m%3===0) ? getVal('acad-bootnum')*getVal('acad-students')*getVal('acad-boot') : 0;
+    let customRev = getVal('acad-custom')*getVal('acad-clients');
+    let academy = bootRev + customRev;
+    data.academy.push(academy);
+
+    // 7. Consulting
+    let consulting = (m%3===0) ? getVal('art-proj')*getVal('art-value') : 0;
+    data.consulting.push(consulting);
+
+    let revenue = teaching + book + content + soulgood + ai + academy + consulting;
+    let cost = getVal('cost-living')+getVal('cost-office')+getVal('cost-software')+getVal('cost-marketing')+getVal('cost-hosting')+getVal('cost-contractor')+getVal('cost-other');
+    let net = revenue - cost;
+    cash += net;
+
+    data.revenue.push(revenue);
+    data.cost.push(cost);
+    data.net.push(net);
+    data.cumulative.push(cash);
+
+    if(!breakeven && cash >= 0 && m > 1) breakeven = m;
+  }
+
+  // Update KPIs
+  const lastNet = data.net[months-1];
+  const lastRev = data.revenue[months-1];
+  const lastCash = data.cumulative[months-1];
+  const y2Total = data.revenue.slice(12,24).reduce((a,b)=>a+b,0);
+  const runway = lastNet > 0 ? Math.floor(lastCash / (getVal('cost-living')+getVal('cost-office'))) : (lastCash / Math.abs(lastNet));
+
+  document.getElementById('kpi-proj').querySelector('.value').textContent = 'HKD '+Math.round(lastRev).toLocaleString();
+  document.getElementById('kpi-proj').querySelector('.value').style.color = lastRev >= 100000 ? 'var(--accent2)' : (lastRev >= 50000 ? 'var(--accent3)' : 'var(--accent4)');
+  document.getElementById('kpi-breakeven').querySelector('.value').textContent = breakeven ? 'M'+breakeven : 'N/A';
+  document.getElementById('kpi-breakeven').querySelector('.value').style.color = breakeven && breakeven <= 12 ? 'var(--accent2)' : (breakeven && breakeven <= 18 ? 'var(--accent3)' : 'var(--accent4)');
+  document.getElementById('kpi-runway').querySelector('.value').textContent = runway > 99 ? '99+' : Math.round(runway)+' mo';
+  document.getElementById('kpi-runway').querySelector('.value').style.color = runway >= 12 ? 'var(--accent2)' : (runway >= 6 ? 'var(--accent3)' : 'var(--accent4)');
+  document.getElementById('kpi-total').querySelector('.value').textContent = 'HKD '+Math.round(y2Total/10000)/100+'M';
+
+  // Table
+  let tbody = '';
+  for(let i=0; i<months; i++) {
+    const cls = data.net[i] >= 0 ? 'positive' : 'negative';
+    const cumCls = data.cumulative[i] >= 0 ? 'positive' : 'negative';
+    tbody += `<tr><td>${data.labels[i]}</td><td class="num">${Math.round(data.teaching[i]).toLocaleString()}</td><td class="num">${Math.round(data.book[i]).toLocaleString()}</td><td class="num">${Math.round(data.content[i]).toLocaleString()}</td><td class="num">${Math.round(data.soulgood[i]).toLocaleString()}</td><td class="num">${Math.round(data.ai[i]).toLocaleString()}</td><td class="num">${Math.round(data.academy[i]).toLocaleString()}</td><td class="num">${Math.round(data.consulting[i]).toLocaleString()}</td><td class="num"><b>${Math.round(data.revenue[i]).toLocaleString()}</b></td><td class="num">${Math.round(data.cost[i]).toLocaleString()}</td><td class="num ${cls}">${Math.round(data.net[i]).toLocaleString()}</td><td class="num ${cumCls}">${Math.round(data.cumulative[i]).toLocaleString()}</td></tr>`;
+  }
+  document.querySelector('#breakdown-table tbody').innerHTML = tbody;
+
+  // Chart
+  if(window.revChart) window.revChart.destroy();
+  window.revChart = new Chart(document.getElementById('revenueChart'), {
+    type:'bar',
+    data:{
+      labels:data.labels,
+      datasets:[
+        {label:'Teaching',data:data.teaching,backgroundColor:'#64748b'},
+        {label:'Book',data:data.book,backgroundColor:'#3b82f6'},
+        {label:'Content',data:data.content,backgroundColor:'#8b5cf6'},
+        {label:'SoulGood',data:data.soulgood,backgroundColor:'#10b981'},
+        {label:'AI Agent',data:data.ai,backgroundColor:'#f59e0b'},
+        {label:'Academy',data:data.academy,backgroundColor:'#ef4444'},
+        {label:'Consulting',data:data.consulting,backgroundColor:'#ec4899'}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{y:{beginAtZero:true,grid:{color:'#334155'},ticks:{color:'#94a3b8'}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}},
+      plugins:{legend:{labels:{color:'#e2e8f0'}}}
+    }
+  });
+
+  // Risk Analysis
+  const risks = [];
+  if(lastRev < 50000) risks.push({level:'high',text:'Month-24 revenue is far below HKD 100K target. Consider focusing on fewer, higher-conviction streams.'});
+  if(!breakeven) risks.push({level:'high',text:'No break-even projected within 24 months. Cash reserves will deplete. Consider reducing one-time costs or accelerating revenue.'});
+  if(breakeven && breakeven > 12) risks.push({level:'med',text:'Break-even takes '+breakeven+' months. Ensure cash reserve covers at least this period.'});
+  if(getVal('sg-convert') < 2) risks.push({level:'med',text:'SoulGood freemium conversion ('+getVal('sg-convert')+'%) is low. Industry average is 2-5%. Test pricing and value proposition.'});
+  if(getVal('ai-churn') > 7) risks.push({level:'med',text:'AI Agent churn ('+getVal('ai-churn')+'%) is high. SaaS benchmark is 3-7%. Focus on onboarding and value delivery.'});
+  if(getVal('book-launch') < 300) risks.push({level:'low',text:'Book launch volume is conservative. Consider pre-order campaign and influencer seeding.'});
+  if(getVal('li-growth') < 8) risks.push({level:'med',text:'Content growth ('+getVal('li-growth')+'%/mo) is slow for monetization. Need 10%+ for meaningful reach within 12 months.'});
+  if(getVal('art-proj') === 0 && getVal('acad-clients') === 0) risks.push({level:'med',text:'No active consulting or custom coaching revenue. These are highest-margin streams — consider at least one anchor client.'});
+  if(runway < 6) risks.push({level:'high',text:'Cash runway is only '+Math.round(runway)+' months. Critical risk — secure additional income or reduce burn immediately.'});
+
+  let riskHtml = risks.length ? '' : '<p class="positive">All key risk indicators are within acceptable range.</p>';
+  risks.forEach(r=>{
+    riskHtml += `<div class="risk-item ${r.level==='high'?'risk-high':r.level==='med'?'risk-med':'risk-low'}"><span>${r.text}</span><span>${r.level.toUpperCase()}</span></div>`;
+  });
+  document.getElementById('risk-analysis').innerHTML = riskHtml;
+
+  // Insights
+  let insights = '';
+  const topStream = ['Teaching','Book','Content','SoulGood','AI Agent','Academy','Consulting'][[data.teaching[23],data.book[23],data.content[23],data.soulgood[23],data.ai[23],data.academy[23],data.consulting[23]].indexOf(Math.max(...[data.teaching[23],data.book[23],data.content[23],data.soulgood[23],data.ai[23],data.academy[23],data.consulting[23]]))];
+  insights += `<div class="insight-box">🏆 <b>Top revenue driver at Month 24:</b> ${topStream} (HKD ${Math.round(Math.max(...[data.teaching[23],data.book[23],data.content[23],data.soulgood[23],data.ai[23],data.academy[23],data.consulting[23]])).toLocaleString()})</div>`;
+
+  if(lastRev < 100000) {
+    const gap = 100000 - lastRev;
+    insights += `<div class="insight-box warning">🎯 <b>Gap to HKD 100K target:</b> HKD ${Math.round(gap).toLocaleString()}/month at Month 24. To close this gap, consider: (1) raising AI Agent price by HKD ${Math.round(gap/getVal('ai-subs'))}, (2) adding ${Math.round(gap/15000)} more Academy students per boot camp, or (3) securing ${Math.round(gap/50000)} more consulting projects per quarter.</div>`;
+  } else {
+    insights += `<div class="insight-box">🎯 <b>Target achieved!</b> Month 24 revenue exceeds HKD 100K. Focus shifts from growth to sustainability and diversification.</div>`;
+  }
+
+  const passiveStreams = data.book[23]+data.content[23]+data.soulgood[23]+data.ai[23];
+  const activeStreams = data.teaching[23]+data.academy[23]+data.consulting[23];
+  insights += `<div class="insight-box">⚖️ <b>Passive vs Active ratio:</b> ${Math.round(passiveStreams/(passiveStreams+activeStreams)*100)}% passive / ${Math.round(activeStreams/(passiveStreams+activeStreams)*100)}% active. ${passiveStreams > activeStreams ? 'Good balance for OPC sustainability.' : 'Consider building more passive income streams to reduce dependency on time-for-money work.'}</div>`;
+
+  document.getElementById('insights').innerHTML = insights;
+}
+
+// ===================== INIT =====================
+
+loadCustomScenarios();
+
+// Priority: URL hash > localStorage > defaults
+const hadHashState = applyHashState();
+const hadStoredState = !hadHashState && restoreState();
+
+renderScenarioTabs();
+update();
+
+if(!hadHashState && !hadStoredState) {
+  currentScenario = 'base';
+  setScenario('base');
+} else {
+  // If we loaded from hash or storage, ensure URL reflects current state
+  updateUrlHash();
+  // And re-render tabs to show correct active state
+  renderScenarioTabs();
+}
+</script>
+</body>
+</html>
